@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.vscode/
+.env
+
+data/*.db
+reports/*.csv
