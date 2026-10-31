@@ -70,33 +70,52 @@ def check_port(host, port, timeout=3):
     )
 
 def check_http(url, timeout=5):
-    """检查目标URL是否能够返回正常HTTP响应。"""
     try:
         with request.urlopen(url, timeout=timeout) as response:
             status_code = response.getcode()
 
-        if 200 <= status_code < 400:
-            status = "PASS"
+            if status_code == 200:
+                status = InspectionStatus.PASS
+                error_type = ErrorType.NONE
+            else:
+                status = InspectionStatus.FAIL
+                error_type = ErrorType.HTTP_STATUS
+
             message = f"{url} 返回HTTP {status_code}"
+
+    except error.HTTPError as exc:
+        status = InspectionStatus.FAIL
+        error_type = ErrorType.HTTP_STATUS
+        message = f"{url} 返回HTTP {exc.code}"
+
+    except error.URLError as exc:
+        reason = exc.reason
+        status = InspectionStatus.FAIL
+
+        if isinstance(reason, TimeoutError):
+            error_type = ErrorType.TIMEOUT
         else:
-            status = "FAIL"
-            message = f"{url} 返回异常HTTP {status_code}"
+            error_type = ErrorType.CONNECTION
 
-    except error.HTTPError as http_error:
-        status = "FAIL"
-        message = f"{url} 返回HTTP {http_error.code}"
+        message = f"{url} 请求失败：{reason}"
 
-    except (error.URLError, TimeoutError, OSError) as request_error:
-        status = "FAIL"
-        message = f"{url} 请求失败：{request_error}"
+    except (TimeoutError, OSError) as exc:
+        status = InspectionStatus.FAIL
 
-    return {
-        "item": "http_health",
-        "target": url,
-        "status": status,
-        "message": message,
-        "checked_at": datetime.now().isoformat(timespec="seconds"),
-    }
+        if isinstance(exc, TimeoutError):
+            error_type = ErrorType.TIMEOUT
+        else:
+            error_type = ErrorType.CONNECTION
+
+        message = f"{url} 请求失败：{exc}"
+
+    return InspectionResult(
+        item="http_health",
+        target=url,
+        status=status,
+        message=message,
+        error_type=error_type,
+    )
 
 def save_results(results, db_path="data/inspections.db"):
     """创建数据库表，并批量保存巡检结果。"""
@@ -231,12 +250,11 @@ def run_checks(config):
         results.append(port_result.to_dict())
 
     for http_config in config["http_checks"]:
-        results.append(
-            check_http(
-                url=http_config["url"],
-                timeout=http_config.get("timeout", 5),
-            )
+        http_result = check_http(
+            url=http_config["url"],
+            timeout=http_config.get("timeout", 5),
         )
+        results.append(http_result.to_dict())
 
     return results
 
