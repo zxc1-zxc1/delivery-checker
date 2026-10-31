@@ -7,6 +7,7 @@ import sqlite3
 import csv
 import json
 from delivery_checker.checkers import check_disk, check_http, check_port
+from delivery_checker.config import load_config
 
 # def check_disk(path=None, min_free_gb=10):
 #     target = path or str(Path.home())
@@ -217,13 +218,13 @@ def print_result(result):
         f"{result['item']}: {result['message']}"
     )
 
-def load_config(config_path="config.json"):
-    """从JSON文件读取巡检配置。"""
-    with Path(config_path).open(
-        "r",
-        encoding="utf-8",
-    ) as file:
-        return json.load(file)
+# def load_config(config_path="config.json"):
+#     """从JSON文件读取巡检配置。"""
+#     with Path(config_path).open(
+#         "r",
+#         encoding="utf-8",
+#     ) as file:
+#         return json.load(file)
 
 
 def run_checks(config):
