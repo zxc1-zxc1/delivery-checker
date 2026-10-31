@@ -6,26 +6,40 @@ import socket
 import sqlite3
 import csv
 import json
-
+from delivery_checker.models import (
+    ErrorType,
+    InspectionResult,
+    InspectionStatus,
+)
 
 def check_disk(path=None, min_free_gb=10):
-    """检查磁盘剩余空间是否达到要求。"""
-    target = Path(path or Path.home().anchor)
-    usage = shutil.disk_usage(target)
+    target = path or str(Path.home())
 
-    free_gb = usage.free / (1024 ** 3)
-    status = "PASS" if free_gb >= min_free_gb else "FAIL"
+    try:
+        usage = shutil.disk_usage(target)
+        free_gb = usage.free / (1024 ** 3)
 
-    return {
-        "item": "disk_free",
-        "target": str(target),
-        "status": status,
-        "message": (
-            f"剩余空间 {free_gb:.2f} GB，"
-            f"要求至少 {min_free_gb} GB"
-        ),
-        "checked_at": datetime.now().isoformat(timespec="seconds"),
-    }
+        if free_gb >= min_free_gb:
+            status = InspectionStatus.PASS
+            error_type = ErrorType.NONE
+        else:
+            status = InspectionStatus.FAIL
+            error_type = ErrorType.THRESHOLD
+
+        message = f"剩余空间 {free_gb:.2f} GB，要求至少 {min_free_gb} GB"
+
+    except OSError as exc:
+        status = InspectionStatus.FAIL
+        error_type = ErrorType.UNEXPECTED
+        message = f"磁盘检查失败：{exc}"
+
+    return InspectionResult(
+        item="disk",
+        target=target,
+        status=status,
+        message=message,
+        error_type=error_type,
+    )
 
 
 def check_port(host, port, timeout=3):
@@ -170,6 +184,7 @@ def export_results_csv(results, output_dir="reports"):
                 "message",
                 "checked_at",
             ],
+            extrasaction="ignore",
         )
         writer.writeheader()
         writer.writerows(results)
@@ -194,13 +209,14 @@ def load_config(config_path="config.json"):
 
 def run_checks(config):
     """根据配置依次执行所有巡检任务。"""
-    disk_config = config["disk"]
-    results = [
-        check_disk(
-            path=disk_config["path"],
-            min_free_gb=disk_config["min_free_gb"],
-        )
-    ]
+    results = []
+
+    disk_config = config.get("disk", {})
+    disk_result = check_disk(
+        path=disk_config.get("path"),
+        min_free_gb=disk_config.get("min_free_gb", 10),
+    )
+    results.append(disk_result.to_dict())
 
     for port_config in config["ports"]:
         results.append(
