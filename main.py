@@ -43,27 +43,31 @@ def check_disk(path=None, min_free_gb=10):
 
 
 def check_port(host, port, timeout=3):
-    """检查目标主机的TCP端口是否可以建立连接。"""
     target = f"{host}:{port}"
 
     try:
-        with socket.create_connection(
-            (host, port),
-            timeout=timeout,
-        ):
-            status = "PASS"
+        with socket.create_connection((host, port), timeout=timeout):
+            status = InspectionStatus.PASS
+            error_type = ErrorType.NONE
             message = f"{target} 可以建立TCP连接"
-    except OSError as error:
-        status = "FAIL"
-        message = f"{target} 连接失败：{error}"
 
-    return {
-        "item": "tcp_port",
-        "target": target,
-        "status": status,
-        "message": message,
-        "checked_at": datetime.now().isoformat(timespec="seconds"),
-    }
+    except socket.timeout as exc:
+        status = InspectionStatus.FAIL
+        error_type = ErrorType.TIMEOUT
+        message = f"{target} 连接失败：{exc}"
+
+    except OSError as exc:
+        status = InspectionStatus.FAIL
+        error_type = ErrorType.CONNECTION
+        message = f"{target} 连接失败：{exc}"
+
+    return InspectionResult(
+        item="tcp_port",
+        target=target,
+        status=status,
+        message=message,
+        error_type=error_type,
+    )
 
 def check_http(url, timeout=5):
     """检查目标URL是否能够返回正常HTTP响应。"""
@@ -219,13 +223,12 @@ def run_checks(config):
     results.append(disk_result.to_dict())
 
     for port_config in config["ports"]:
-        results.append(
-            check_port(
-                host=port_config["host"],
-                port=port_config["port"],
-                timeout=port_config.get("timeout", 3),
-            )
+        port_result = check_port(
+            host=port_config["host"],
+            port=port_config["port"],
+            timeout=port_config.get("timeout", 3),
         )
+        results.append(port_result.to_dict())
 
     for http_config in config["http_checks"]:
         results.append(
