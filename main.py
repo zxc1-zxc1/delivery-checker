@@ -1,121 +1,117 @@
-from urllib import error, request
+# from urllib import error, request
 from datetime import datetime
 from pathlib import Path
-import shutil
-import socket
+# import shutil
+# import socket
 import sqlite3
 import csv
 import json
-from delivery_checker.models import (
-    ErrorType,
-    InspectionResult,
-    InspectionStatus,
-)
+from delivery_checker.checkers import check_disk, check_http, check_port
 
-def check_disk(path=None, min_free_gb=10):
-    target = path or str(Path.home())
+# def check_disk(path=None, min_free_gb=10):
+#     target = path or str(Path.home())
 
-    try:
-        usage = shutil.disk_usage(target)
-        free_gb = usage.free / (1024 ** 3)
+#     try:
+#         usage = shutil.disk_usage(target)
+#         free_gb = usage.free / (1024 ** 3)
 
-        if free_gb >= min_free_gb:
-            status = InspectionStatus.PASS
-            error_type = ErrorType.NONE
-        else:
-            status = InspectionStatus.FAIL
-            error_type = ErrorType.THRESHOLD
+#         if free_gb >= min_free_gb:
+#             status = InspectionStatus.PASS
+#             error_type = ErrorType.NONE
+#         else:
+#             status = InspectionStatus.FAIL
+#             error_type = ErrorType.THRESHOLD
 
-        message = f"剩余空间 {free_gb:.2f} GB，要求至少 {min_free_gb} GB"
+#         message = f"剩余空间 {free_gb:.2f} GB，要求至少 {min_free_gb} GB"
 
-    except OSError as exc:
-        status = InspectionStatus.FAIL
-        error_type = ErrorType.UNEXPECTED
-        message = f"磁盘检查失败：{exc}"
+#     except OSError as exc:
+#         status = InspectionStatus.FAIL
+#         error_type = ErrorType.UNEXPECTED
+#         message = f"磁盘检查失败：{exc}"
 
-    return InspectionResult(
-        item="disk",
-        target=target,
-        status=status,
-        message=message,
-        error_type=error_type,
-    )
+#     return InspectionResult(
+#         item="disk",
+#         target=target,
+#         status=status,
+#         message=message,
+#         error_type=error_type,
+#     )
 
 
-def check_port(host, port, timeout=3):
-    target = f"{host}:{port}"
+# def check_port(host, port, timeout=3):
+#     target = f"{host}:{port}"
 
-    try:
-        with socket.create_connection((host, port), timeout=timeout):
-            status = InspectionStatus.PASS
-            error_type = ErrorType.NONE
-            message = f"{target} 可以建立TCP连接"
+#     try:
+#         with socket.create_connection((host, port), timeout=timeout):
+#             status = InspectionStatus.PASS
+#             error_type = ErrorType.NONE
+#             message = f"{target} 可以建立TCP连接"
 
-    except socket.timeout as exc:
-        status = InspectionStatus.FAIL
-        error_type = ErrorType.TIMEOUT
-        message = f"{target} 连接失败：{exc}"
+#     except socket.timeout as exc:
+#         status = InspectionStatus.FAIL
+#         error_type = ErrorType.TIMEOUT
+#         message = f"{target} 连接失败：{exc}"
 
-    except OSError as exc:
-        status = InspectionStatus.FAIL
-        error_type = ErrorType.CONNECTION
-        message = f"{target} 连接失败：{exc}"
+#     except OSError as exc:
+#         status = InspectionStatus.FAIL
+#         error_type = ErrorType.CONNECTION
+#         message = f"{target} 连接失败：{exc}"
 
-    return InspectionResult(
-        item="tcp_port",
-        target=target,
-        status=status,
-        message=message,
-        error_type=error_type,
-    )
+#     return InspectionResult(
+#         item="tcp_port",
+#         target=target,
+#         status=status,
+#         message=message,
+#         error_type=error_type,
+#     )
 
-def check_http(url, timeout=5):
-    try:
-        with request.urlopen(url, timeout=timeout) as response:
-            status_code = response.getcode()
+# def check_http(url, timeout=5):
+#     try:
+#         with request.urlopen(url, timeout=timeout) as response:
+#             status_code = response.getcode()
 
-            if status_code == 200:
-                status = InspectionStatus.PASS
-                error_type = ErrorType.NONE
-            else:
-                status = InspectionStatus.FAIL
-                error_type = ErrorType.HTTP_STATUS
+#             if status_code == 200:
+#                 status = InspectionStatus.PASS
+#                 error_type = ErrorType.NONE
+#             else:
+#                 status = InspectionStatus.FAIL
+#                 error_type = ErrorType.HTTP_STATUS
 
-            message = f"{url} 返回HTTP {status_code}"
+#             message = f"{url} 返回HTTP {status_code}"
 
-    except error.HTTPError as exc:
-        status = InspectionStatus.FAIL
-        error_type = ErrorType.HTTP_STATUS
-        message = f"{url} 返回HTTP {exc.code}"
+#     except error.HTTPError as exc:
+#         status = InspectionStatus.FAIL
+#         error_type = ErrorType.HTTP_STATUS
+#         message = f"{url} 返回HTTP {exc.code}"
 
-    except error.URLError as exc:
-        reason = exc.reason
-        status = InspectionStatus.FAIL
+#     except error.URLError as exc:
+#         reason = exc.reason
+#         status = InspectionStatus.FAIL
 
-        if isinstance(reason, TimeoutError):
-            error_type = ErrorType.TIMEOUT
-        else:
-            error_type = ErrorType.CONNECTION
+#         if isinstance(reason, TimeoutError):
+#             error_type = ErrorType.TIMEOUT
+#         else:
+#             error_type = ErrorType.CONNECTION
 
-        message = f"{url} 请求失败：{reason}"
+#         message = f"{url} 请求失败：{reason}"
 
-    except (TimeoutError, OSError) as exc:
-        status = InspectionStatus.FAIL
+#     except (TimeoutError, OSError) as exc:
+#         status = InspectionStatus.FAIL
 
-        if isinstance(exc, TimeoutError):
-            error_type = ErrorType.TIMEOUT
-        else:
-            error_type = ErrorType.CONNECTION
+#         if isinstance(exc, TimeoutError):
+#             error_type = ErrorType.TIMEOUT
+#         else:
+#             error_type = ErrorType.CONNECTION
 
-        message = f"{url} 请求失败：{exc}"
+#         message = f"{url} 请求失败：{exc}"
 
-    return InspectionResult(
-        item="http_health",
-        target=url,
-        status=status,
-        message=message,
-        error_type=error_type,
-    )
+#     return InspectionResult(
+#         item="http_health",
+#         target=url,
+#         status=status,
+#         message=message,
+#         error_type=error_type,
+#     )
 
 def save_results(results, db_path="data/inspections.db"):
     """创建数据库表，并批量保存巡检结果。"""
