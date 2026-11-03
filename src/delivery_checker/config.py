@@ -16,6 +16,25 @@ def _validate_timeout(value, location):
     ):
         raise ConfigError(f"{location} 必须是大于 0 的数字")
 
+def _validate_retry_options(item, location):
+    """校验最大尝试次数和重试间隔。"""
+
+    max_attempts = item.get("max_attempts", 1)
+    if (
+        isinstance(max_attempts, bool)
+        or not isinstance(max_attempts, int)
+        or max_attempts < 1
+    ):
+        raise ConfigError(f"{location}.max_attempts 必须是大于或等于 1 的整数")
+
+    retry_delay = item.get("retry_delay", 0.2)
+    if (
+        isinstance(retry_delay, bool)
+        or not isinstance(retry_delay, (int, float))
+        or retry_delay < 0
+    ):
+        raise ConfigError(f"{location}.retry_delay 必须是大于或等于 0 的数字")
+
 
 def validate_config(config) -> dict:
     """校验巡检配置，校验通过后返回原配置。"""
@@ -65,6 +84,7 @@ def validate_config(config) -> dict:
             )
 
         _validate_timeout(item.get("timeout", 3), f"{location}.timeout")
+        _validate_retry_options(item, location)
 
     http_checks = config.get("http_checks")
     if not isinstance(http_checks, list):
@@ -87,6 +107,7 @@ def validate_config(config) -> dict:
             )
 
         _validate_timeout(item.get("timeout", 5), f"{location}.timeout")
+        _validate_retry_options(item, location)
 
     return config
 

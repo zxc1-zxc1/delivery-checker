@@ -12,7 +12,9 @@
     {
       "host": "127.0.0.1",
       "port": 65534,
-      "timeout": 1
+      "timeout": 1,
+      "max_attempts": 2,
+      "retry_delay": 0.2
     }
   ],
   "http_checks": [

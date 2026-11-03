@@ -58,6 +58,8 @@ def run_checks(config) -> list[dict]:
     for port_config in config["ports"]:
         port_result = run_with_retry(
             check_port,
+            max_attempts=port_config.get("max_attempts", 1),
+            retry_delay=port_config.get("retry_delay", 0.2),
             host=port_config["host"],
             port=port_config["port"],
             timeout=port_config.get("timeout", 3),
@@ -67,6 +69,8 @@ def run_checks(config) -> list[dict]:
     for http_config in config["http_checks"]:
         http_result = run_with_retry(
             check_http,
+            max_attempts=http_config.get("max_attempts", 1),
+            retry_delay=http_config.get("retry_delay", 0.2),
             url=http_config["url"],
             timeout=http_config.get("timeout", 5),
         )

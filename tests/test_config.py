@@ -57,6 +57,16 @@ class ConfigValidationTest(unittest.TestCase):
             validate_config(config)
 
         self.assertIn("http_checks[0].url", str(context.exception))
+        
+    def test_invalid_max_attempts(self):
+        config = make_valid_config()
+        config["ports"][0]["max_attempts"] = 0
+
+        with self.assertRaises(ConfigError) as context:
+            validate_config(config)
+
+        self.assertIn("ports[0].max_attempts", str(context.exception))
+
 
 
 if __name__ == "__main__":

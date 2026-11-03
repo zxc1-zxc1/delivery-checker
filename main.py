@@ -297,11 +297,14 @@ def main():
     for result in results:
         print_result(result)
         logger.info(
-            "event=check_result item=%s target=%s status=%s error_type=%s",
+            "event=check_result item=%s target=%s status=%s "
+            "error_type=%s attempts=%d duration_ms=%.2f",
             result["item"],
             result["target"],
             result["status"],
             result.get("error_type", ""),
+            result.get("attempts", 1),
+            result.get("duration_ms", 0.0),
         )
 
     summary = summarize_results(results)
