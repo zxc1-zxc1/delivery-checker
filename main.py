@@ -8,7 +8,7 @@ import csv
 import json
 from delivery_checker.checkers import check_disk, check_http, check_port
 from delivery_checker.config import ConfigError, load_config
-
+from delivery_checker.storage import get_recent_results, save_results
 # def check_disk(path=None, min_free_gb=10):
 #     target = path or str(Path.home())
 
@@ -114,74 +114,74 @@ from delivery_checker.config import ConfigError, load_config
 #         error_type=error_type,
 #     )
 
-def save_results(results, db_path="data/inspections.db"):
-    """创建数据库表，并批量保存巡检结果。"""
-    db_path = Path(db_path)
-    db_path.parent.mkdir(parents=True, exist_ok=True)
+# def save_results(results, db_path="data/inspections.db"):
+#     """创建数据库表，并批量保存巡检结果。"""
+#     db_path = Path(db_path)
+#     db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    connection = sqlite3.connect(db_path)
+#     connection = sqlite3.connect(db_path)
 
-    try:
-        connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS inspection_results (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                item TEXT NOT NULL,
-                target TEXT NOT NULL,
-                status TEXT NOT NULL,
-                message TEXT NOT NULL,
-                checked_at TEXT NOT NULL
-            )
-            """
-        )
+#     try:
+#         connection.execute(
+#             """
+#             CREATE TABLE IF NOT EXISTS inspection_results (
+#                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+#                 item TEXT NOT NULL,
+#                 target TEXT NOT NULL,
+#                 status TEXT NOT NULL,
+#                 message TEXT NOT NULL,
+#                 checked_at TEXT NOT NULL
+#             )
+#             """
+#         )
 
-        connection.executemany(
-            """
-            INSERT INTO inspection_results (
-                item,
-                target,
-                status,
-                message,
-                checked_at
-            )
-            VALUES (
-                :item,
-                :target,
-                :status,
-                :message,
-                :checked_at
-            )
-            """,
-            results,
-        )
+#         connection.executemany(
+#             """
+#             INSERT INTO inspection_results (
+#                 item,
+#                 target,
+#                 status,
+#                 message,
+#                 checked_at
+#             )
+#             VALUES (
+#                 :item,
+#                 :target,
+#                 :status,
+#                 :message,
+#                 :checked_at
+#             )
+#             """,
+#             results,
+#         )
 
-        connection.commit()
-    finally:
-        connection.close()
+#         connection.commit()
+#     finally:
+#         connection.close()
 
-def get_recent_results(limit=4, db_path="data/inspections.db"):
-    """按照记录编号倒序查询最近的巡检结果。"""
-    connection = sqlite3.connect(db_path)
+# def get_recent_results(limit=4, db_path="data/inspections.db"):
+#     """按照记录编号倒序查询最近的巡检结果。"""
+#     connection = sqlite3.connect(db_path)
 
-    try:
-        rows = connection.execute(
-            """
-            SELECT
-                item,
-                target,
-                status,
-                message,
-                checked_at
-            FROM inspection_results
-            ORDER BY id DESC
-            LIMIT ?
-            """,
-            (limit,),
-        ).fetchall()
+#     try:
+#         rows = connection.execute(
+#             """
+#             SELECT
+#                 item,
+#                 target,
+#                 status,
+#                 message,
+#                 checked_at
+#             FROM inspection_results
+#             ORDER BY id DESC
+#             LIMIT ?
+#             """,
+#             (limit,),
+#         ).fetchall()
 
-        return rows
-    finally:
-        connection.close()
+#         return rows
+#     finally:
+#         connection.close()
 
 def export_results_csv(results, output_dir="reports"):
     """将本次巡检结果导出为CSV报告。"""
