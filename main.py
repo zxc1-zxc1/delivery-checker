@@ -1,5 +1,7 @@
+
 # from urllib import error, request
 from datetime import datetime
+
 from pathlib import Path
 # import shutil
 # import socket
@@ -10,6 +12,9 @@ from delivery_checker.runner import run_checks
 from delivery_checker.config import ConfigError, load_config
 from delivery_checker.storage import get_recent_results, save_results
 from delivery_checker.reporting import export_results_csv
+import logging
+from delivery_checker.logging_config import setup_logging
+logger = logging.getLogger("delivery_checker")
 
 # def check_disk(path=None, min_free_gb=10):
 #     target = path or str(Path.home())
@@ -275,16 +280,29 @@ def summarize_results(results):
     }
 
 def main():
+    logger.info("event=program_started")
     try:
         config = load_config()
     except ConfigError as exc:
         print(f"配置错误：{exc}")
+        logger.error("event=config_error message=%s", exc)
         return 2
+
+    logger.info("event=config_loaded")
+
     results = run_checks(config)
+    logger.info("event=checks_completed count=%d", len(results))
 
     print("本次巡检结果：")
     for result in results:
         print_result(result)
+        logger.info(
+            "event=check_result item=%s target=%s status=%s error_type=%s",
+            result["item"],
+            result["target"],
+            result["status"],
+            result.get("error_type", ""),
+        )
 
     summary = summarize_results(results)
     print(
@@ -308,4 +326,5 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_logging()
     raise SystemExit(main())
