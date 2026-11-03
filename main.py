@@ -7,7 +7,7 @@ import sqlite3
 import csv
 import json
 from delivery_checker.checkers import check_disk, check_http, check_port
-from delivery_checker.config import load_config
+from delivery_checker.config import ConfigError, load_config
 
 # def check_disk(path=None, min_free_gb=10):
 #     target = path or str(Path.home())
@@ -273,7 +273,11 @@ def summarize_results(results):
     }
 
 def main():
-    config = load_config()
+    try:
+        config = load_config()
+    except ConfigError as exc:
+        print(f"配置错误：{exc}")
+        return 2
     results = run_checks(config)
 
     print("本次巡检结果：")
