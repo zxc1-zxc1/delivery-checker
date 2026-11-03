@@ -1,7 +1,12 @@
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from .checkers import check_disk, check_http, check_port
-from .models import ErrorType, InspectionStatus
+from .models import (
+    ErrorType,
+    InspectionResult,
+    InspectionStatus,
+)
 
 
 RETRYABLE_ERRORS = {
@@ -42,8 +47,24 @@ def run_with_retry(
         time.sleep(retry_delay)
 
 
+def _run_safely(check_function, item, target, **check_kwargs):
+    """执行单项任务，避免未预期异常中断整个巡检。"""
+
+    try:
+        return run_with_retry(check_function, **check_kwargs)
+
+    except Exception as exc:
+        return InspectionResult(
+            item=item,
+            target=target,
+            status=InspectionStatus.FAIL,
+            message=f"检查执行异常：{exc}",
+            error_type=ErrorType.UNEXPECTED,
+        )
+
+
 def run_checks(config) -> list[dict]:
-    """根据配置依次执行所有巡检任务。"""
+    """执行磁盘检查，并发执行网络检查，保持结果顺序稳定。"""
 
     results = []
 
@@ -55,25 +76,60 @@ def run_checks(config) -> list[dict]:
     )
     results.append(disk_result.to_dict())
 
+    network_tasks = []
+
     for port_config in config["ports"]:
-        port_result = run_with_retry(
-            check_port,
-            max_attempts=port_config.get("max_attempts", 1),
-            retry_delay=port_config.get("retry_delay", 0.2),
-            host=port_config["host"],
-            port=port_config["port"],
-            timeout=port_config.get("timeout", 3),
+        host = port_config["host"]
+        port = port_config["port"]
+
+        network_tasks.append(
+            (
+                "tcp_port",
+                f"{host}:{port}",
+                check_port,
+                {
+                    "max_attempts": port_config.get("max_attempts", 1),
+                    "retry_delay": port_config.get("retry_delay", 0.2),
+                    "host": host,
+                    "port": port,
+                    "timeout": port_config.get("timeout", 3),
+                },
+            )
         )
-        results.append(port_result.to_dict())
 
     for http_config in config["http_checks"]:
-        http_result = run_with_retry(
-            check_http,
-            max_attempts=http_config.get("max_attempts", 1),
-            retry_delay=http_config.get("retry_delay", 0.2),
-            url=http_config["url"],
-            timeout=http_config.get("timeout", 5),
+        url = http_config["url"]
+
+        network_tasks.append(
+            (
+                "http_health",
+                url,
+                check_http,
+                {
+                    "max_attempts": http_config.get("max_attempts", 1),
+                    "retry_delay": http_config.get("retry_delay", 0.2),
+                    "url": url,
+                    "timeout": http_config.get("timeout", 5),
+                },
+            )
         )
-        results.append(http_result.to_dict())
+
+    if network_tasks:
+        with ThreadPoolExecutor(
+            max_workers=min(4, len(network_tasks))
+        ) as executor:
+            futures = [
+                executor.submit(
+                    _run_safely,
+                    check_function,
+                    item,
+                    target,
+                    **check_kwargs,
+                )
+                for item, target, check_function, check_kwargs in network_tasks
+            ]
+
+            for future in futures:
+                results.append(future.result().to_dict())
 
     return results
