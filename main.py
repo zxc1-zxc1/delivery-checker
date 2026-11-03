@@ -9,6 +9,7 @@ import json
 from delivery_checker.checkers import check_disk, check_http, check_port
 from delivery_checker.config import ConfigError, load_config
 from delivery_checker.storage import get_recent_results, save_results
+from delivery_checker.reporting import export_results_csv
 # def check_disk(path=None, min_free_gb=10):
 #     target = path or str(Path.home())
 
@@ -183,33 +184,33 @@ from delivery_checker.storage import get_recent_results, save_results
 #     finally:
 #         connection.close()
 
-def export_results_csv(results, output_dir="reports"):
-    """将本次巡检结果导出为CSV报告。"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    report_path = Path(output_dir) / f"inspection_{timestamp}.csv"
+# def export_results_csv(results, output_dir="reports"):
+    # """将本次巡检结果导出为CSV报告。"""
+    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # report_path = Path(output_dir) / f"inspection_{timestamp}.csv"
 
-    report_path.parent.mkdir(parents=True, exist_ok=True)
+    # report_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with report_path.open(
-        "w",
-        newline="",
-        encoding="utf-8-sig",
-    ) as file:
-        writer = csv.DictWriter(
-            file,
-            fieldnames=[
-                "item",
-                "target",
-                "status",
-                "message",
-                "checked_at",
-            ],
-            extrasaction="ignore",
-        )
-        writer.writeheader()
-        writer.writerows(results)
+    # with report_path.open(
+    #     "w",
+    #     newline="",
+    #     encoding="utf-8-sig",
+    # ) as file:
+    #     writer = csv.DictWriter(
+    #         file,
+    #         fieldnames=[
+    #             "item",
+    #             "target",
+    #             "status",
+    #             "message",
+    #             "checked_at",
+    #         ],
+    #         extrasaction="ignore",
+    #     )
+    #     writer.writeheader()
+    #     writer.writerows(results)
 
-    return report_path
+    # return report_path
 
 def print_result(result):
     """在终端中打印一条巡检结果。"""
