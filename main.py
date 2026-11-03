@@ -6,10 +6,11 @@ from pathlib import Path
 import sqlite3
 import csv
 import json
-from delivery_checker.checkers import check_disk, check_http, check_port
+from delivery_checker.runner import run_checks
 from delivery_checker.config import ConfigError, load_config
 from delivery_checker.storage import get_recent_results, save_results
 from delivery_checker.reporting import export_results_csv
+
 # def check_disk(path=None, min_free_gb=10):
 #     target = path or str(Path.home())
 
@@ -228,33 +229,33 @@ def print_result(result):
 #         return json.load(file)
 
 
-def run_checks(config):
-    """根据配置依次执行所有巡检任务。"""
-    results = []
+# def run_checks(config):
+#     """根据配置依次执行所有巡检任务。"""
+#     results = []
 
-    disk_config = config.get("disk", {})
-    disk_result = check_disk(
-        path=disk_config.get("path"),
-        min_free_gb=disk_config.get("min_free_gb", 10),
-    )
-    results.append(disk_result.to_dict())
+#     disk_config = config.get("disk", {})
+#     disk_result = check_disk(
+#         path=disk_config.get("path"),
+#         min_free_gb=disk_config.get("min_free_gb", 10),
+#     )
+#     results.append(disk_result.to_dict())
 
-    for port_config in config["ports"]:
-        port_result = check_port(
-            host=port_config["host"],
-            port=port_config["port"],
-            timeout=port_config.get("timeout", 3),
-        )
-        results.append(port_result.to_dict())
+#     for port_config in config["ports"]:
+#         port_result = check_port(
+#             host=port_config["host"],
+#             port=port_config["port"],
+#             timeout=port_config.get("timeout", 3),
+#         )
+#         results.append(port_result.to_dict())
 
-    for http_config in config["http_checks"]:
-        http_result = check_http(
-            url=http_config["url"],
-            timeout=http_config.get("timeout", 5),
-        )
-        results.append(http_result.to_dict())
+#     for http_config in config["http_checks"]:
+#         http_result = check_http(
+#             url=http_config["url"],
+#             timeout=http_config.get("timeout", 5),
+#         )
+#         results.append(http_result.to_dict())
 
-    return results
+#     return results
 
 def summarize_results(results):
     """统计巡检结果数量。"""
