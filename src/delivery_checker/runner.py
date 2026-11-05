@@ -1,7 +1,8 @@
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from .checkers import check_disk, check_http, check_port
+from .checkers import check_disk, check_http, check_mysql, check_port
 from .models import (
     ErrorType,
     InspectionResult,
@@ -110,6 +111,32 @@ def run_checks(config) -> list[dict]:
                     "retry_delay": http_config.get("retry_delay", 0.2),
                     "url": url,
                     "timeout": http_config.get("timeout", 5),
+                },
+            )
+        )
+
+    for mysql_config in config.get("mysql_checks", []):
+        host = mysql_config["host"]
+        port = mysql_config.get("port", 3306)
+        password_env = mysql_config.get(
+            "password_env",
+            "DELIVERY_CHECKER_MYSQL_PASSWORD",
+        )
+
+        network_tasks.append(
+            (
+                "mysql_health",
+                f"{host}:{port}",
+                check_mysql,
+                {
+                    "max_attempts": mysql_config.get("max_attempts", 1),
+                    "retry_delay": mysql_config.get("retry_delay", 0.2),
+                    "host": host,
+                    "port": port,
+                    "user": mysql_config["user"],
+                    "password": os.environ.get(password_env, ""),
+                    "database": mysql_config.get("database"),
+                    "timeout": mysql_config.get("timeout", 5),
                 },
             )
         )

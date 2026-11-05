@@ -67,7 +67,19 @@ class ConfigValidationTest(unittest.TestCase):
 
         self.assertIn("ports[0].max_attempts", str(context.exception))
 
+    def test_mysql_password_must_use_environment_variable_name(self):
+        config = {
+            "mysql_checks": [
+                {
+                    "host": "127.0.0.1",
+                    "user": "inspector",
+                    "password_env": "",
+                }
+            ]
+        }
 
+        with self.assertRaises(ConfigError):
+            validate_config(config)
 
 if __name__ == "__main__":
     unittest.main()

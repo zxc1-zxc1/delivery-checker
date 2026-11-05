@@ -2,6 +2,8 @@ import shutil
 import socket
 from pathlib import Path
 from urllib import error, request
+import pymysql
+import time
 
 from .models import ErrorType, InspectionResult, InspectionStatus
 
@@ -111,3 +113,99 @@ def check_http(url, timeout=5):
         message=message,
         error_type=error_type,
     )
+
+def check_mysql(
+    host,
+    port=3306,
+    user="root",
+    password="",
+    database=None,
+    timeout=5,
+):
+    """连接 MySQL 并执行 SELECT 1，验证数据库是否可用。"""
+
+    started_at = time.perf_counter()
+    target = f"{host}:{port}"
+    connection = None
+
+    try:
+        connect_options = {
+            "host": host,
+            "port": port,
+            "user": user,
+            "password": password,
+            "connect_timeout": timeout,
+            "read_timeout": timeout,
+            "write_timeout": timeout,
+            "charset": "utf8mb4",
+        }
+
+        if database:
+            connect_options["database"] = database
+
+        connection = pymysql.connect(**connect_options)
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            row = cursor.fetchone()
+
+        if row == (1,):
+            return InspectionResult(
+                item="mysql_health",
+                target=target,
+                status=InspectionStatus.PASS,
+                message=f"{target} MySQL连接和查询正常",
+                duration_ms=round(
+                    (time.perf_counter() - started_at) * 1000,
+                    2,
+                ),
+            )
+
+        return InspectionResult(
+            item="mysql_health",
+            target=target,
+            status=InspectionStatus.FAIL,
+            message=f"{target} MySQL返回异常结果：{row!r}",
+            duration_ms=round(
+                (time.perf_counter() - started_at) * 1000,
+                2,
+            ),
+            error_type=ErrorType.UNEXPECTED,
+        )
+
+    except pymysql.err.OperationalError as exc:
+        message = str(exc)
+
+        if "timed out" in message.lower():
+            error_type = ErrorType.TIMEOUT
+        else:
+            error_type = ErrorType.CONNECTION
+
+        return InspectionResult(
+            item="mysql_health",
+            target=target,
+            status=InspectionStatus.FAIL,
+            message=f"{target} MySQL连接或查询失败：{exc}",
+            duration_ms=round(
+                (time.perf_counter() - started_at) * 1000,
+                2,
+            ),
+            error_type=error_type,
+        )
+
+    except Exception as exc:
+        return InspectionResult(
+            item="mysql_health",
+            target=target,
+            status=InspectionStatus.FAIL,
+            message=f"{target} MySQL检查异常：{exc}",
+            duration_ms=round(
+                (time.perf_counter() - started_at) * 1000,
+                2,
+            ),
+            error_type=ErrorType.UNEXPECTED,
+        )
+
+    finally:
+        if connection is not None:
+            connection.close()

@@ -137,6 +137,49 @@ class RunnerTest(unittest.TestCase):
             ["PASS", "PASS", "PASS"],
         )
 
+    def test_mysql_uses_password_from_environment(self):
+        config = {
+            "disk": {},
+            "ports": [],
+            "http_checks": [],
+            "mysql_checks": [
+                {
+                    "host": "127.0.0.1",
+                    "user": "inspector",
+                    "password_env": "TEST_MYSQL_PASSWORD",
+                }
+            ],
+        }
+
+        with (
+            patch("delivery_checker.runner.check_disk") as mocked_disk,
+            patch("delivery_checker.runner.check_mysql") as mocked_mysql,
+            patch.dict(
+                "delivery_checker.runner.os.environ",
+                {"TEST_MYSQL_PASSWORD": "test-secret"},
+            ),
+        ):
+            mocked_disk.return_value = make_result(
+                InspectionStatus.PASS,
+                ErrorType.NONE,
+                item="disk",
+                target=".",
+            )
+            mocked_mysql.return_value = make_result(
+                InspectionStatus.PASS,
+                ErrorType.NONE,
+                item="mysql_health",
+                target="127.0.0.1:3306",
+            )
+
+            results = run_checks(config)
+
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[1]["item"], "mysql_health")
+
+        mysql_options = mocked_mysql.call_args.kwargs
+        self.assertEqual(mysql_options["password"], "test-secret")
+        self.assertEqual(mysql_options["user"], "inspector")
 
 if __name__ == "__main__":
     unittest.main()
