@@ -18,13 +18,16 @@ def export_results_csv(results, output_dir="reports"):
     ) as file:
         writer = csv.DictWriter(
             file,
-            fieldnames=[
-                "item",
-                "target",
-                "status",
-                "message",
-                "checked_at",
-            ],
+                    fieldnames=[
+            "item",
+            "target",
+            "status",
+            "message",
+            "checked_at",
+            "duration_ms",
+            "attempts",
+            "error_type",
+        ],
             extrasaction="ignore",
         )
         writer.writeheader()
