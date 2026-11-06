@@ -1,0 +1,24 @@
+{
+  "disk": {
+    "path": ".",
+    "min_free_gb": 10
+  },
+  "ports": [
+    {
+      "host": "www.baidu.com",
+      "port": 443,
+      "timeout": 3,
+      "max_attempts": 2,
+      "retry_delay": 0.2
+    }
+  ],
+  "http_checks": [
+    {
+      "url": "https://www.baidu.com",
+      "timeout": 5,
+      "max_attempts": 2,
+      "retry_delay": 0.2
+    }
+  ],
+  "mysql_checks": []
+}
