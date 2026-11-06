@@ -1,9 +1,10 @@
 import shutil
 import socket
+import time
 from pathlib import Path
 from urllib import error, request
+
 import pymysql
-import time
 
 from .models import ErrorType, InspectionResult, InspectionStatus
 

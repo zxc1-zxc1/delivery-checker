@@ -9,7 +9,6 @@ from .models import (
     InspectionStatus,
 )
 
-
 RETRYABLE_ERRORS = {
     ErrorType.TIMEOUT,
     ErrorType.CONNECTION,

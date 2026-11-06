@@ -1,19 +1,16 @@
 
 # from urllib import error, request
-from datetime import datetime
 
-from pathlib import Path
 # import shutil
 # import socket
-import sqlite3
-import csv
-import json
+import logging
+
 from .config import ConfigError, load_config
 from .logging_config import setup_logging
 from .reporting import export_results_csv
 from .runner import run_checks
 from .storage import get_recent_results, save_results
-import logging
+
 # from delivery_checker.logging_config import setup_logging
 logger = logging.getLogger("delivery_checker")
 

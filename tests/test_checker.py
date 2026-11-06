@@ -2,9 +2,8 @@ import csv
 import tempfile
 import unittest
 from pathlib import Path
-from delivery_checker.cli import summarize_results
 
-from delivery_checker.cli import(
+from delivery_checker.cli import (
     export_results_csv,
     get_recent_results,
     save_results,
