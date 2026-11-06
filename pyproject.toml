@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "delivery-checker"
+version = "2.0.0.dev1"
+description = "面向软件交付现场的巡检与诊断命令行工具"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "PyMySQL>=1.1,<1.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<10",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

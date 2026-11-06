@@ -8,3 +8,6 @@ reports/*.csv
 logs/*.log
 .pytest_cache/
 .pytest_cache
+*.egg-info/
+build/
+dist/
