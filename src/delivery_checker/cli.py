@@ -1,8 +1,5 @@
 
-# from urllib import error, request
 
-# import shutil
-# import socket
 import logging
 
 from .config import ConfigError, load_config
@@ -11,210 +8,42 @@ from .reporting import export_results_csv
 from .runner import run_checks
 from .storage import get_recent_results, save_results
 
-# from delivery_checker.logging_config import setup_logging
 logger = logging.getLogger("delivery_checker")
 
-# def check_disk(path=None, min_free_gb=10):
-#     target = path or str(Path.home())
-
-#     try:
-#         usage = shutil.disk_usage(target)
-#         free_gb = usage.free / (1024 ** 3)
-
-#         if free_gb >= min_free_gb:
-#             status = InspectionStatus.PASS
-#             error_type = ErrorType.NONE
-#         else:
-#             status = InspectionStatus.FAIL
-#             error_type = ErrorType.THRESHOLD
-
-#         message = f"剩余空间 {free_gb:.2f} GB，要求至少 {min_free_gb} GB"
-
-#     except OSError as exc:
-#         status = InspectionStatus.FAIL
-#         error_type = ErrorType.UNEXPECTED
-#         message = f"磁盘检查失败：{exc}"
-
-#     return InspectionResult(
-#         item="disk",
-#         target=target,
-#         status=status,
-#         message=message,
-#         error_type=error_type,
-#     )
 
 
-# def check_port(host, port, timeout=3):
-#     target = f"{host}:{port}"
 
-#     try:
-#         with socket.create_connection((host, port), timeout=timeout):
-#             status = InspectionStatus.PASS
-#             error_type = ErrorType.NONE
-#             message = f"{target} 可以建立TCP连接"
 
-#     except socket.timeout as exc:
-#         status = InspectionStatus.FAIL
-#         error_type = ErrorType.TIMEOUT
-#         message = f"{target} 连接失败：{exc}"
 
-#     except OSError as exc:
-#         status = InspectionStatus.FAIL
-#         error_type = ErrorType.CONNECTION
-#         message = f"{target} 连接失败：{exc}"
 
-#     return InspectionResult(
-#         item="tcp_port",
-#         target=target,
-#         status=status,
-#         message=message,
-#         error_type=error_type,
-#     )
 
-# def check_http(url, timeout=5):
-#     try:
-#         with request.urlopen(url, timeout=timeout) as response:
-#             status_code = response.getcode()
 
-#             if status_code == 200:
-#                 status = InspectionStatus.PASS
-#                 error_type = ErrorType.NONE
-#             else:
-#                 status = InspectionStatus.FAIL
-#                 error_type = ErrorType.HTTP_STATUS
 
-#             message = f"{url} 返回HTTP {status_code}"
 
-#     except error.HTTPError as exc:
-#         status = InspectionStatus.FAIL
-#         error_type = ErrorType.HTTP_STATUS
-#         message = f"{url} 返回HTTP {exc.code}"
 
-#     except error.URLError as exc:
-#         reason = exc.reason
-#         status = InspectionStatus.FAIL
 
-#         if isinstance(reason, TimeoutError):
-#             error_type = ErrorType.TIMEOUT
-#         else:
-#             error_type = ErrorType.CONNECTION
 
-#         message = f"{url} 请求失败：{reason}"
 
-#     except (TimeoutError, OSError) as exc:
-#         status = InspectionStatus.FAIL
 
-#         if isinstance(exc, TimeoutError):
-#             error_type = ErrorType.TIMEOUT
-#         else:
-#             error_type = ErrorType.CONNECTION
 
-#         message = f"{url} 请求失败：{exc}"
 
-#     return InspectionResult(
-#         item="http_health",
-#         target=url,
-#         status=status,
-#         message=message,
-#         error_type=error_type,
-#     )
 
-# def save_results(results, db_path="data/inspections.db"):
-#     """创建数据库表，并批量保存巡检结果。"""
-#     db_path = Path(db_path)
-#     db_path.parent.mkdir(parents=True, exist_ok=True)
 
-#     connection = sqlite3.connect(db_path)
 
-#     try:
-#         connection.execute(
-#             """
-#             CREATE TABLE IF NOT EXISTS inspection_results (
-#                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-#                 item TEXT NOT NULL,
-#                 target TEXT NOT NULL,
-#                 status TEXT NOT NULL,
-#                 message TEXT NOT NULL,
-#                 checked_at TEXT NOT NULL
-#             )
-#             """
-#         )
 
-#         connection.executemany(
-#             """
-#             INSERT INTO inspection_results (
-#                 item,
-#                 target,
-#                 status,
-#                 message,
-#                 checked_at
-#             )
-#             VALUES (
-#                 :item,
-#                 :target,
-#                 :status,
-#                 :message,
-#                 :checked_at
-#             )
-#             """,
-#             results,
-#         )
 
-#         connection.commit()
-#     finally:
-#         connection.close()
 
-# def get_recent_results(limit=4, db_path="data/inspections.db"):
-#     """按照记录编号倒序查询最近的巡检结果。"""
-#     connection = sqlite3.connect(db_path)
 
-#     try:
-#         rows = connection.execute(
-#             """
-#             SELECT
-#                 item,
-#                 target,
-#                 status,
-#                 message,
-#                 checked_at
-#             FROM inspection_results
-#             ORDER BY id DESC
-#             LIMIT ?
-#             """,
-#             (limit,),
-#         ).fetchall()
 
-#         return rows
-#     finally:
-#         connection.close()
 
-# def export_results_csv(results, output_dir="reports"):
-    # """将本次巡检结果导出为CSV报告。"""
-    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    # report_path = Path(output_dir) / f"inspection_{timestamp}.csv"
 
-    # report_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # with report_path.open(
-    #     "w",
-    #     newline="",
-    #     encoding="utf-8-sig",
-    # ) as file:
-    #     writer = csv.DictWriter(
-    #         file,
-    #         fieldnames=[
-    #             "item",
-    #             "target",
-    #             "status",
-    #             "message",
-    #             "checked_at",
-    #         ],
-    #         extrasaction="ignore",
-    #     )
-    #     writer.writeheader()
-    #     writer.writerows(results)
 
-    # return report_path
+
+
+
+
+
 
 def print_result(result):
     """在终端中打印一条巡检结果。"""
@@ -223,42 +52,12 @@ def print_result(result):
         f"{result['item']}: {result['message']}"
     )
 
-# def load_config(config_path="config.json"):
-#     """从JSON文件读取巡检配置。"""
-#     with Path(config_path).open(
-#         "r",
-#         encoding="utf-8",
-#     ) as file:
-#         return json.load(file)
 
 
-# def run_checks(config):
-#     """根据配置依次执行所有巡检任务。"""
-#     results = []
 
-#     disk_config = config.get("disk", {})
-#     disk_result = check_disk(
-#         path=disk_config.get("path"),
-#         min_free_gb=disk_config.get("min_free_gb", 10),
-#     )
-#     results.append(disk_result.to_dict())
 
-#     for port_config in config["ports"]:
-#         port_result = check_port(
-#             host=port_config["host"],
-#             port=port_config["port"],
-#             timeout=port_config.get("timeout", 3),
-#         )
-#         results.append(port_result.to_dict())
 
-#     for http_config in config["http_checks"]:
-#         http_result = check_http(
-#             url=http_config["url"],
-#             timeout=http_config.get("timeout", 5),
-#         )
-#         results.append(http_result.to_dict())
 
-#     return results
 
 def summarize_results(results):
     """统计巡检结果数量。"""
