@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "delivery-checker"
-version = "2.0.0.dev1"
+version = "2.0.0"
 description = "面向软件交付现场的巡检与诊断命令行工具"
 readme = "README.md"
 requires-python = ">=3.10"
