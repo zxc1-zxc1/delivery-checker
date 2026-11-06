@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "delivery-checker"
+version = "2.0.0"
+description = "面向软件交付现场的巡检与诊断命令行工具"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "PyMySQL>=1.1,<1.2",
+]
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<10",
+    "ruff>=0.8,<1.0",
+    "mypy>=1.10,<2.0",
+    "types-PyMySQL>=1.1,<2",
+]
+
+[project.scripts]
+delivery-checker = "delivery_checker.cli:entry_point"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B"]
+
+[tool.mypy]
+python_version = "3.10"
+mypy_path = "src"
+check_untyped_defs = true
+warn_unused_configs = true
