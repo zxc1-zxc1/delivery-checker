@@ -1,6 +1,8 @@
 import os
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 from .checkers import check_disk, check_http, check_mysql, check_port
 from .models import (
@@ -13,6 +15,9 @@ RETRYABLE_ERRORS = {
     ErrorType.TIMEOUT,
     ErrorType.CONNECTION,
 }
+
+CheckFunction = Callable[..., InspectionResult]
+NetworkTask = tuple[str, str, CheckFunction, dict[str, Any]]
 
 
 def run_with_retry(
@@ -76,7 +81,7 @@ def run_checks(config) -> list[dict]:
     )
     results.append(disk_result.to_dict())
 
-    network_tasks = []
+    network_tasks: list[NetworkTask] = []
 
     for port_config in config["ports"]:
         host = port_config["host"]
