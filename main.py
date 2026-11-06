@@ -1,20 +1,20 @@
 
-# from urllib import error, request
-from datetime import datetime
+# # from urllib import error, request
+# from datetime import datetime
 
-from pathlib import Path
-# import shutil
-# import socket
-import sqlite3
-import csv
-import json
-from delivery_checker.runner import run_checks
-from delivery_checker.config import ConfigError, load_config
-from delivery_checker.storage import get_recent_results, save_results
-from delivery_checker.reporting import export_results_csv
-import logging
-from delivery_checker.logging_config import setup_logging
-logger = logging.getLogger("delivery_checker")
+# from pathlib import Path
+# # import shutil
+# # import socket
+# import sqlite3
+# import csv
+# import json
+# from delivery_checker.runner import run_checks
+# from delivery_checker.config import ConfigError, load_config
+# from delivery_checker.storage import get_recent_results, save_results
+# from delivery_checker.reporting import export_results_csv
+# import logging
+# from delivery_checker.logging_config import setup_logging
+# logger = logging.getLogger("delivery_checker")
 
 # def check_disk(path=None, min_free_gb=10):
 #     target = path or str(Path.home())
@@ -218,12 +218,12 @@ logger = logging.getLogger("delivery_checker")
 
     # return report_path
 
-def print_result(result):
-    """在终端中打印一条巡检结果。"""
-    print(
-        f"[{result['status']}] "
-        f"{result['item']}: {result['message']}"
-    )
+# def print_result(result):
+#     """在终端中打印一条巡检结果。"""
+#     print(
+#         f"[{result['status']}] "
+#         f"{result['item']}: {result['message']}"
+#     )
 
 # def load_config(config_path="config.json"):
 #     """从JSON文件读取巡检配置。"""
@@ -262,72 +262,81 @@ def print_result(result):
 
 #     return results
 
-def summarize_results(results):
-    """统计巡检结果数量。"""
-    passed_count = sum(
-        1 for result in results
-        if result["status"] == "PASS"
-    )
-    failed_count = sum(
-        1 for result in results
-        if result["status"] == "FAIL"
-    )
+# def summarize_results(results):
+#     """统计巡检结果数量。"""
+#     passed_count = sum(
+#         1 for result in results
+#         if result["status"] == "PASS"
+#     )
+#     failed_count = sum(
+#         1 for result in results
+#         if result["status"] == "FAIL"
+#     )
 
-    return {
-        "total": len(results),
-        "passed": passed_count,
-        "failed": failed_count,
-    }
+#     return {
+#         "total": len(results),
+#         "passed": passed_count,
+#         "failed": failed_count,
+#     }
 
-def main():
-    logger.info("event=program_started")
-    try:
-        config = load_config()
-    except ConfigError as exc:
-        print(f"配置错误：{exc}")
-        logger.error("event=config_error message=%s", exc)
-        return 2
+# def main():
+#     logger.info("event=program_started")
+#     try:
+#         config = load_config()
+#     except ConfigError as exc:
+#         print(f"配置错误：{exc}")
+#         logger.error("event=config_error message=%s", exc)
+#         return 2
 
-    logger.info("event=config_loaded")
+#     logger.info("event=config_loaded")
 
-    results = run_checks(config)
-    logger.info("event=checks_completed count=%d", len(results))
+#     results = run_checks(config)
+#     logger.info("event=checks_completed count=%d", len(results))
 
-    print("本次巡检结果：")
-    for result in results:
-        print_result(result)
-        logger.info(
-            "event=check_result item=%s target=%s status=%s "
-            "error_type=%s attempts=%d duration_ms=%.2f",
-            result["item"],
-            result["target"],
-            result["status"],
-            result.get("error_type", ""),
-            result.get("attempts", 1),
-            result.get("duration_ms", 0.0),
-        )
+#     print("本次巡检结果：")
+#     for result in results:
+#         print_result(result)
+#         logger.info(
+#             "event=check_result item=%s target=%s status=%s "
+#             "error_type=%s attempts=%d duration_ms=%.2f",
+#             result["item"],
+#             result["target"],
+#             result["status"],
+#             result.get("error_type", ""),
+#             result.get("attempts", 1),
+#             result.get("duration_ms", 0.0),
+#         )
 
-    summary = summarize_results(results)
-    print(
-        f"\n巡检汇总：共 {summary['total']} 项，"
-        f"PASS {summary['passed']} 项，"
-        f"FAIL {summary['failed']} 项"
-    )
+#     summary = summarize_results(results)
+#     print(
+#         f"\n巡检汇总：共 {summary['total']} 项，"
+#         f"PASS {summary['passed']} 项，"
+#         f"FAIL {summary['failed']} 项"
+#     )
 
-    save_results(results)
+#     save_results(results)
 
-    recent_results = get_recent_results(limit=4)
-    print("\n数据库中最近4条记录：")
-    for row in recent_results:
-        item, target, status, message, checked_at = row
-        print(f"{checked_at} [{status}] {item}: {message}")
+#     recent_results = get_recent_results(limit=4)
+#     print("\n数据库中最近4条记录：")
+#     for row in recent_results:
+#         item, target, status, message, checked_at = row
+#         print(f"{checked_at} [{status}] {item}: {message}")
 
-    report_path = export_results_csv(results)
-    print(f"\nCSV报告已保存到：{report_path}")
+#     report_path = export_results_csv(results)
+#     print(f"\nCSV报告已保存到：{report_path}")
 
-    return 1 if summary["failed"] > 0 else 0
+#     return 1 if summary["failed"] > 0 else 0
+
+
+# if __name__ == "__main__":
+#     setup_logging()
+#     raise SystemExit(main())
+
+from delivery_checker.cli import entry_point, main, summarize_results
+
+
+__all__ = ["entry_point", "main", "summarize_results"]
 
 
 if __name__ == "__main__":
-    setup_logging()
-    raise SystemExit(main())
+    raise SystemExit(entry_point())
